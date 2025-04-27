@@ -206,7 +206,21 @@ public ShowItemHandler(id, menu, item)
 
 public ResetMapConfig(id)
 {
-	CC_SendMessage(id, "Not finished yet");
+	g_RemoveAll = false;
+	TrieClear(g_ModelStatus);
+	TrieClear(g_TempStatus);
+	
+	new map[32];
+	get_mapname(map, charsmax(map));
+	new filepath[256];
+	formatex(filepath, charsmax(filepath), "%s/%s.txt", FILEPATH, map);
+	if(file_exists(filepath))
+	{
+		delete_file(filepath);
+	}
+	
+	ScanMapItems();
+	CC_SendMessage(id, "Todas as configurações foram resetadas.");
 	OpenMainMenu(id);
 }
 
