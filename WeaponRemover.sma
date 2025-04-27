@@ -27,8 +27,8 @@ public plugin_init()
 	register_logevent("EventNewRound", 2, "1=Round_Start");
 	register_logevent("EventNewRound", 2, "1=Round_End");
 	
-	register_clcmd("say /wremove", "OpenMenu", ADMIN_FLAG);
-	register_clcmd("say_team /wremove", "OpenMenu", ADMIN_FLAG);
+	register_clcmd("say /wremove", "OpenMainMenu", ADMIN_FLAG);
+	register_clcmd("say_team /wremove", "OpenMainMenu", ADMIN_FLAG);
 
 	CC_SetPrefix("&x04[FWO]");
 
@@ -44,17 +44,71 @@ public plugin_init()
 	LoadMapConfig();
 }
 
-public EventNewRound()
+public ScanMapItems()
 {
-	RemoveItems();
+	ArrayClear(g_ModelNames);
+	TrieClear(g_ModelStatus);
+	TrieClear(g_TempStatus);
+	
+	new ent = -1, model[32];
+	while((ent = find_ent_by_class(ent, "armoury_entity")))
+	{
+		if(pev_valid(ent))
+		{
+			pev(ent, pev_model, model, charsmax(model));
+			if(containi(model, "w_") == -1)
+				continue;
+			
+			if(ArrayFindString(g_ModelNames, model) == -1)
+			{
+				ArrayPushString(g_ModelNames, model);
+				TrieSetCell(g_ModelStatus, model, false);
+			}
+		}
+	}
 }
 
-public OpenMenu(id)
+public OpenMainMenu(id)
 {
 	if(!cmd_access(id, ADMIN_FLAG, 0, 1))
 		return PLUGIN_HANDLED;
 	
-	new menu = menu_create("\r[FWO] \d- \wSelect Items:", "MenuHandler");
+	new title[32];
+	formatex(title, charsmax(title), "\r[FWO] \d- \wWeapon Remover");
+	new menu = menu_create(title, "MainMenuHandler");
+	
+	menu_additem(menu, "\wMap Weapons", "1");
+	menu_additem(menu, "\wReset All Settings", "2");
+	
+	menu_setprop(menu, MPROP_EXIT, MEXIT_ALL);
+	menu_display(id, menu, 0);
+	return PLUGIN_HANDLED;
+}
+
+public MainMenuHandler(id, menu, item)
+{
+	if(item == MENU_EXIT)
+	{
+		menu_destroy(menu); 
+		return PLUGIN_HANDLED;
+	}
+	
+	switch(item)
+	{
+		case 0: ShowItemMenu(id);
+		case 1: ResetMapConfig(id);
+	}
+	
+	menu_destroy(menu);
+	return PLUGIN_HANDLED;
+}
+
+public ShowItemMenu(id)
+{
+	if(!cmd_access(id, ADMIN_FLAG, 0, 1))
+		return PLUGIN_HANDLED;
+	
+	new menu = menu_create("\r[FWO] \d- \wSelect Items:", "ShowItemHandler");
 	new model[32], itemText[64], bool:status;
 	
 	formatex(itemText, charsmax(itemText), "\rREMOVE ALL %s", g_RemoveAll ? "\r[REMOVED]" : "\y[ON]");
@@ -77,11 +131,12 @@ public OpenMenu(id)
 	return PLUGIN_HANDLED;
 }
 
-public MenuHandler(id, menu, item)
+public ShowItemHandler(id, menu, item)
 {
 	if(item == MENU_EXIT)
 	{
 		menu_destroy(menu);
+		OpenMainMenu(id);
 		return PLUGIN_HANDLED;
 	}
 	
@@ -128,7 +183,7 @@ public MenuHandler(id, menu, item)
 	{
 		CC_SendMessage(id, "Remoção global ativa. Alterar o status da entidade única não é permitido.");
 		menu_destroy(menu);
-		OpenMenu(id);
+		ShowItemMenu(id);
 		return PLUGIN_HANDLED;
 	}
 	else
@@ -145,32 +200,19 @@ public MenuHandler(id, menu, item)
 	}
 	
 	menu_destroy(menu);
-	OpenMenu(id);
+	ShowItemMenu(id)(id);
 	return PLUGIN_HANDLED;
 }
 
-public ScanMapItems()
+public ResetMapConfig(id)
 {
-	ArrayClear(g_ModelNames);
-	TrieClear(g_ModelStatus);
-	TrieClear(g_TempStatus);
-	
-	new ent = -1, model[32];
-	while((ent = find_ent_by_class(ent, "armoury_entity")))
-	{
-		if(pev_valid(ent))
-		{
-			pev(ent, pev_model, model, charsmax(model));
-			if(containi(model, "w_") == -1)
-				continue;
-			
-			if(ArrayFindString(g_ModelNames, model) == -1)
-			{
-				ArrayPushString(g_ModelNames, model);
-				TrieSetCell(g_ModelStatus, model, false);
-			}
-		}
-	}
+	CC_SendMessage(id, "Not finished yet");
+	OpenMainMenu(id);
+}
+
+public EventNewRound()
+{
+	RemoveItems();
 }
 
 public LoadMapConfig()
