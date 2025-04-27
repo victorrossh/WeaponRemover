@@ -14,7 +14,8 @@
 const ADMIN_FLAG = ADMIN_IMMUNITY;
 const MAX_MODELS = 50;
 
-new Array:g_ModelNames;
+new Array:g_Models;
+new Array:g_Classnames;
 new Trie:g_ModelStatus;
 new Trie:g_TempStatus;
 new bool:g_RemoveAll;
@@ -26,7 +27,7 @@ public plugin_init()
 	register_event("HLTV", "EventNewRound", "a", "1=0", "2=0");
 	register_logevent("EventNewRound", 2, "1=Round_Start");
 	register_logevent("EventNewRound", 2, "1=Round_End");
-	
+
 	register_clcmd("say /wremove", "OpenMainMenu", ADMIN_FLAG);
 	register_clcmd("say_team /wremove", "OpenMainMenu", ADMIN_FLAG);
 
@@ -35,7 +36,8 @@ public plugin_init()
 	if(!dir_exists(FILEPATH))
 		mkdir(FILEPATH);
 	
-	g_ModelNames = ArrayCreate(32, MAX_MODELS);
+	g_Models = ArrayCreate(32, MAX_MODELS);
+	g_Classnames = ArrayCreate(32, MAX_MODELS);
 	g_ModelStatus = TrieCreate();
 	g_TempStatus = TrieCreate();
 	g_RemoveAll = false;
@@ -46,11 +48,12 @@ public plugin_init()
 
 public ScanMapItems()
 {
-	ArrayClear(g_ModelNames);
+	ArrayClear(g_Models);
+	ArrayClear(g_Classnames);
 	TrieClear(g_ModelStatus);
 	TrieClear(g_TempStatus);
 	
-	new ent = -1, model[32];
+	new ent = -1, model[32], classname[32];
 	while((ent = find_ent_by_class(ent, "armoury_entity")))
 	{
 		if(pev_valid(ent))
@@ -59,9 +62,15 @@ public ScanMapItems()
 			if(containi(model, "w_") == -1)
 				continue;
 			
-			if(ArrayFindString(g_ModelNames, model) == -1)
+			new temp[32];
+			copy(temp, charsmax(temp), model[9]);
+			temp[strlen(temp) - 4] = 0;
+			formatex(classname, charsmax(classname), "weapon_%s", temp);
+			
+			if(ArrayFindString(g_Models, model) == -1)
 			{
-				ArrayPushString(g_ModelNames, model);
+				ArrayPushString(g_Models, model);
+				ArrayPushString(g_Classnames, classname);
 				TrieSetCell(g_ModelStatus, model, false);
 			}
 		}
@@ -109,20 +118,21 @@ public ShowItemMenu(id)
 		return PLUGIN_HANDLED;
 	
 	new menu = menu_create("\r[FWO] \d- \wSelect Items:", "ShowItemHandler");
-	new model[32], itemText[64], bool:status;
+	new itemText[64], bool:status, model[32], classname[32];
 	
 	formatex(itemText, charsmax(itemText), "\rREMOVE ALL %s", g_RemoveAll ? "\r[REMOVED]" : "\y[ON]");
 	menu_additem(menu, itemText, "all");
 	
-	if(ArraySize(g_ModelNames) == 0)
+	if(ArraySize(g_Models) == 0)
 		menu_additem(menu, "No items found in map", "", g_RemoveAll ? ITEM_DISABLED : 0);
 	else
 	{
-		for(new i = 0; i < ArraySize(g_ModelNames); i++)
+		for(new i = 0; i < ArraySize(g_Models); i++)
 		{
-			ArrayGetString(g_ModelNames, i, model, charsmax(model));
+			ArrayGetString(g_Models, i, model, charsmax(model));
+			ArrayGetString(g_Classnames, i, classname, charsmax(classname));
 			TrieGetCell(g_ModelStatus, model, status);
-			formatex(itemText, charsmax(itemText), "\w%s %s", model, g_RemoveAll ? "\r[REMOVED]" : (status ? "\r[REMOVED]" : "\y[ON]"));
+			formatex(itemText, charsmax(itemText), "\w%s %s", classname, g_RemoveAll ? "\r[REMOVED]" : (status ? "\r[REMOVED]" : "\y[ON]"));
 			menu_additem(menu, itemText, fmt("%d", i), g_RemoveAll ? ITEM_DISABLED : 0);
 		}
 	}
@@ -149,9 +159,9 @@ public ShowItemHandler(id, menu, item)
 		{
 			new model[32], bool:status;
 			TrieClear(g_TempStatus);
-			for(new i = 0; i < ArraySize(g_ModelNames); i++)
+			for(new i = 0; i < ArraySize(g_Models); i++)
 			{
-				ArrayGetString(g_ModelNames, i, model, charsmax(model));
+				ArrayGetString(g_Models, i, model, charsmax(model));
 				TrieGetCell(g_ModelStatus, model, status);
 				TrieSetCell(g_TempStatus, model, status);
 			}
@@ -162,9 +172,9 @@ public ShowItemHandler(id, menu, item)
 		if(!g_RemoveAll)
 		{
 			new model[32], bool:tempStatus;
-			for(new i = 0; i < ArraySize(g_ModelNames); i++)
+			for(new i = 0; i < ArraySize(g_Models); i++)
 			{
-				ArrayGetString(g_ModelNames, i, model, charsmax(model));
+				ArrayGetString(g_Models, i, model, charsmax(model));
 				if(TrieGetCell(g_TempStatus, model, tempStatus))
 				{
 					TrieSetCell(g_ModelStatus, model, tempStatus);
@@ -190,7 +200,7 @@ public ShowItemHandler(id, menu, item)
 	{
 		new index = str_to_num(info);
 		new model[32];
-		ArrayGetString(g_ModelNames, index, model, charsmax(model));
+		ArrayGetString(g_Models, index, model, charsmax(model));
 		new bool:status;
 		TrieGetCell(g_ModelStatus, model, status);
 		TrieSetCell(g_ModelStatus, model, !status);
@@ -237,9 +247,9 @@ public LoadMapConfig()
 	
 	g_RemoveAll = false;
 	new model[32];
-	for(new i = 0; i < ArraySize(g_ModelNames); i++)
+	for(new i = 0; i < ArraySize(g_Models); i++)
 	{
-		ArrayGetString(g_ModelNames, i, model, charsmax(model));
+		ArrayGetString(g_Models, i, model, charsmax(model));
 		TrieSetCell(g_ModelStatus, model, false);
 	}
 	
@@ -261,13 +271,13 @@ public LoadMapConfig()
 			if(equal(model, "REMOVE_ALL"))
 			{
 				g_RemoveAll = true;
-				for(new i = 0; i < ArraySize(g_ModelNames); i++)
+				for(new i = 0; i < ArraySize(g_Models); i++)
 				{
-					ArrayGetString(g_ModelNames, i, model, charsmax(model));
+					ArrayGetString(g_Models, i, model, charsmax(model));
 					TrieSetCell(g_ModelStatus, model, true);
 				}
 			}
-			else if(ArrayFindString(g_ModelNames, model) != -1)
+			else if(ArrayFindString(g_Models, model) != -1)
 			{
 				TrieSetCell(g_ModelStatus, model, true);
 			}
@@ -294,9 +304,9 @@ public SaveMapConfig()
 		else
 		{
 			new model[32], bool:status;
-			for(new i = 0; i < ArraySize(g_ModelNames); i++)
+			for(new i = 0; i < ArraySize(g_Models); i++)
 			{
-				ArrayGetString(g_ModelNames, i, model, charsmax(model));
+				ArrayGetString(g_Models, i, model, charsmax(model));
 				TrieGetCell(g_ModelStatus, model, status);
 				if(status)
 					fprintf(file, "%s^n", model);
