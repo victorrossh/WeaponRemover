@@ -19,6 +19,7 @@ new Array:g_Classnames;
 new Trie:g_ModelStatus;
 new Trie:g_TempStatus;
 new bool:g_RemoveAll;
+new cvar_auto_remove;
 
 public plugin_init()
 {
@@ -30,6 +31,8 @@ public plugin_init()
 
 	register_clcmd("say /wremove", "OpenMainMenu", ADMIN_FLAG);
 	register_clcmd("say_team /wremove", "OpenMainMenu", ADMIN_FLAG);
+
+	cvar_auto_remove = register_cvar("wremove_auto_remove", "1");
 
 	CC_SetPrefix("&x04[FWO]");
 
@@ -246,43 +249,62 @@ public LoadMapConfig()
 	formatex(mapFile, charsmax(mapFile), "%s/%s.txt", FILEPATH, mapName);
 	
 	g_RemoveAll = false;
-	new model[32];
-	for(new i = 0; i < ArraySize(g_Models); i++)
-	{
-		ArrayGetString(g_Models, i, model, charsmax(model));
-		TrieSetCell(g_ModelStatus, model, false);
-	}
+
+	// Check if a config file exists
+	new bool:hasConfig = (file_exists(mapFile) != 0);
 	
-	new file = fopen(mapFile, "r");
-	if(file)
+	// If no config file exists and cvar is enabled, enable auto-remove initially
+	if(!hasConfig && get_pcvar_num(cvar_auto_remove))
 	{
-		new line[32], model[32];
-		while(!feof(file))
+		g_RemoveAll = true;
+		new model[32];
+		for(new i = 0; i < ArraySize(g_Models); i++)
 		{
-			fgets(file, line, charsmax(line));
-			trim(line);
-			
-			if(!line[0] || line[0] == ';')
-				continue;
-			
-			parse(line, model, charsmax(model));
-			trim(model);
-			
-			if(equal(model, "REMOVE_ALL"))
+			ArrayGetString(g_Models, i, model, charsmax(model));
+			TrieSetCell(g_ModelStatus, model, true);
+		}
+	}
+	else
+	{
+		// If config file exists or cvar is disabled, load settings normally
+		new model[32];
+		for(new i = 0; i < ArraySize(g_Models); i++)
+		{
+			ArrayGetString(g_Models, i, model, charsmax(model));
+			TrieSetCell(g_ModelStatus, model, false);
+		}
+		
+		new file = fopen(mapFile, "r");
+		if(file)
+		{
+			new line[32], model[32];
+			while(!feof(file))
 			{
-				g_RemoveAll = true;
-				for(new i = 0; i < ArraySize(g_Models); i++)
+				fgets(file, line, charsmax(line));
+				trim(line);
+				
+				if(!line[0] || line[0] == ';')
+					continue;
+				
+				parse(line, model, charsmax(model));
+				trim(model);
+				
+				if(equal(model, "REMOVE_ALL"))
 				{
-					ArrayGetString(g_Models, i, model, charsmax(model));
+					g_RemoveAll = true;
+					for(new i = 0; i < ArraySize(g_Models); i++)
+					{
+						ArrayGetString(g_Models, i, model, charsmax(model));
+						TrieSetCell(g_ModelStatus, model, true);
+					}
+				}
+				else if(ArrayFindString(g_Models, model) != -1)
+				{
 					TrieSetCell(g_ModelStatus, model, true);
 				}
 			}
-			else if(ArrayFindString(g_Models, model) != -1)
-			{
-				TrieSetCell(g_ModelStatus, model, true);
-			}
+			fclose(file);
 		}
-		fclose(file);
 	}
 	
 	RemoveItems();
