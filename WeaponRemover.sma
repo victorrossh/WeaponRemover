@@ -200,7 +200,7 @@ public ShowItemHandler(id, menu, item)
 	}
 	
 	menu_destroy(menu);
-	ShowItemMenu(id)(id);
+	ShowItemMenu(id);
 	return PLUGIN_HANDLED;
 }
 
