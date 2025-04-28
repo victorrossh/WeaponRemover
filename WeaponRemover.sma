@@ -9,10 +9,12 @@
 #define VERSION "1.0"
 
 #define FILEPATH "addons/amxmodx/configs/WeaponRemover"
+#define MAX_PLAYERS 32
+#define IsPlayer(%1) (1 <= %1 <= MAX_PLAYERS)
 #pragma semicolon 1
 
-const ADMIN_FLAG = ADMIN_IMMUNITY;
 const MAX_MODELS = 50;
+const REMOVE_TASK_ID = 4096;
 
 new Array:g_Models;
 new Array:g_Classnames;
@@ -20,6 +22,8 @@ new Trie:g_ModelStatus;
 new Trie:g_TempStatus;
 new bool:g_RemoveAll;
 new cvar_auto_remove;
+new cvar_drop_enable;
+new cvar_drop_time;
 
 public plugin_init()
 {
@@ -29,10 +33,12 @@ public plugin_init()
 	register_logevent("EventNewRound", 2, "1=Round_Start");
 	register_logevent("EventNewRound", 2, "1=Round_End");
 
-	register_clcmd("say /wremove", "OpenMainMenu", ADMIN_FLAG);
-	register_clcmd("say_team /wremove", "OpenMainMenu", ADMIN_FLAG);
+	register_clcmd("say /wremove", "OpenMainMenu", ADMIN_IMMUNITY);
+	register_clcmd("say_team /wremove", "OpenMainMenu", ADMIN_IMMUNITY);
 
 	cvar_auto_remove = register_cvar("wremove_auto_remove", "1");
+	cvar_drop_enable = register_cvar("wremove_drop_enable", "1");
+	cvar_drop_time = register_cvar("wremove_drop_time", "10.0");
 
 	CC_SetPrefix("&x04[FWO]");
 
@@ -44,6 +50,8 @@ public plugin_init()
 	g_ModelStatus = TrieCreate();
 	g_TempStatus = TrieCreate();
 	g_RemoveAll = false;
+	
+	register_forward(FM_SetModel, "Forward_SetModel");
 	
 	ScanMapItems();
 	LoadMapConfig();
@@ -87,7 +95,7 @@ public ScanMapItems()
 
 public OpenMainMenu(id)
 {
-	if(!cmd_access(id, ADMIN_FLAG, 0, 1))
+	if(!cmd_access(id, ADMIN_IMMUNITY, 0, 1))
 		return PLUGIN_HANDLED;
 	
 	new title[64];
@@ -126,7 +134,7 @@ public MainMenuHandler(id, menu, item)
 
 public ShowItemMenu(id)
 {
-	if(!cmd_access(id, ADMIN_FLAG, 0, 1))
+	if(!cmd_access(id, ADMIN_IMMUNITY, 0, 1))
 		return PLUGIN_HANDLED;
 	
 	new title[64];
@@ -372,4 +380,48 @@ public RemoveItems()
 			}
 		}
 	}
+}
+
+public Forward_SetModel(iEntity, const szModel[])
+{
+	if(!get_pcvar_num(cvar_drop_enable))
+		return FMRES_IGNORED;
+
+	static iOwner;
+	iOwner = pev(iEntity, pev_owner);
+
+	if(IsPlayer(iOwner) && task_exists(iEntity + REMOVE_TASK_ID))
+	{
+		remove_task(iEntity + REMOVE_TASK_ID);
+	}
+
+	if(IsPlayer(iOwner) && equal(szModel, "models/w_", 9))
+	{
+		static szClass[16];
+		pev(iEntity, pev_classname, szClass, charsmax(szClass));
+
+		static Float:iRemoveTime;
+		iRemoveTime = get_pcvar_float(cvar_drop_time);
+
+		if (equal(szClass, "weaponbox"))
+		{
+			set_task(iRemoveTime, "RemoveDroppedWeapon", iEntity + REMOVE_TASK_ID);
+		}
+	}
+
+	return FMRES_IGNORED;
+}
+
+public RemoveDroppedWeapon(iTask)
+{
+	new iEntity = iTask - REMOVE_TASK_ID;
+	if(!pev_valid(iEntity))
+		return FMRES_IGNORED;
+
+	static szClass[16];
+	pev(iEntity, pev_classname, szClass, charsmax(szClass));
+
+	if(equal(szClass, "weaponbox"))
+		remove_entity(iEntity);
+	return FMRES_IGNORED;
 }
