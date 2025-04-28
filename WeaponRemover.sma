@@ -49,6 +49,11 @@ public plugin_init()
 	LoadMapConfig();
 }
 
+public plugin_cfg()
+{
+	register_dictionary("weapon_remover_ftl.txt");
+}
+
 public ScanMapItems()
 {
 	ArrayClear(g_Models);
@@ -85,12 +90,16 @@ public OpenMainMenu(id)
 	if(!cmd_access(id, ADMIN_FLAG, 0, 1))
 		return PLUGIN_HANDLED;
 	
-	new title[32];
-	formatex(title, charsmax(title), "\r[FWO] \d- \wWeapon Remover");
+	new title[64];
+	formatex(title, charsmax(title), "\r[FWO] \d- \w%L", id, "MENU_MAIN_TITLE");
 	new menu = menu_create(title, "MainMenuHandler");
 	
-	menu_additem(menu, "\wMap Weapons", "1");
-	menu_additem(menu, "\wReset All Settings", "2");
+	new itemText[64];
+	formatex(itemText, charsmax(itemText), "\w%L", id, "MENU_MAP_WEAPONS");
+	menu_additem(menu, itemText, "1");
+	
+	formatex(itemText, charsmax(itemText), "\w%L", id, "MENU_RESET_SETTINGS");
+	menu_additem(menu, itemText, "2");
 	
 	menu_setprop(menu, MPROP_EXIT, MEXIT_ALL);
 	menu_display(id, menu, 0);
@@ -120,14 +129,22 @@ public ShowItemMenu(id)
 	if(!cmd_access(id, ADMIN_FLAG, 0, 1))
 		return PLUGIN_HANDLED;
 	
-	new menu = menu_create("\r[FWO] \d- \wSelect Items:", "ShowItemHandler");
+	new title[64];
+	formatex(title, charsmax(title), "\r[FWO] \d- \w%L", id, "MENU_SELECT_ITEMS");
+	new menu = menu_create(title, "ShowItemHandler");
+	
 	new itemText[64], bool:status, model[32], classname[32];
 	
-	formatex(itemText, charsmax(itemText), "\rREMOVE ALL %s", g_RemoveAll ? "\r[REMOVED]" : "\y[ON]");
+	new statusText[32];
+	formatex(statusText, charsmax(statusText), "\r%L", id, g_RemoveAll ? "STATUS_REMOVED" : "STATUS_ON");
+	formatex(itemText, charsmax(itemText), "\r%L %s", id, "MENU_REMOVE_ALL", statusText);
 	menu_additem(menu, itemText, "all");
 	
 	if(ArraySize(g_Models) == 0)
-		menu_additem(menu, "No items found in map", "", g_RemoveAll ? ITEM_DISABLED : 0);
+	{
+		formatex(itemText, charsmax(itemText), "%L", id, "MENU_NO_ITEMS");
+		menu_additem(menu, itemText, "", g_RemoveAll ? ITEM_DISABLED : 0);
+	}
 	else
 	{
 		for(new i = 0; i < ArraySize(g_Models); i++)
@@ -135,7 +152,10 @@ public ShowItemMenu(id)
 			ArrayGetString(g_Models, i, model, charsmax(model));
 			ArrayGetString(g_Classnames, i, classname, charsmax(classname));
 			TrieGetCell(g_ModelStatus, model, status);
-			formatex(itemText, charsmax(itemText), "\w%s %s", classname, g_RemoveAll ? "\r[REMOVED]" : (status ? "\r[REMOVED]" : "\y[ON]"));
+			
+			new statusTextItem[32];
+			formatex(statusTextItem, charsmax(statusTextItem), "\r%L", id, g_RemoveAll ? "STATUS_REMOVED" : (status ? "STATUS_REMOVED" : "STATUS_ON"));
+			formatex(itemText, charsmax(itemText), "\w%s %s", classname, statusTextItem);
 			menu_additem(menu, itemText, fmt("%d", i), g_RemoveAll ? ITEM_DISABLED : 0);
 		}
 	}
@@ -194,7 +214,7 @@ public ShowItemHandler(id, menu, item)
 	}
 	else if(g_RemoveAll)
 	{
-		CC_SendMessage(id, "Remoção global ativa. Alterar o status da entidade única não é permitido.");
+		CC_SendMessage(id, "%L", id, "MSG_GLOBAL_ACTIVE");
 		menu_destroy(menu);
 		ShowItemMenu(id);
 		return PLUGIN_HANDLED;
@@ -233,7 +253,7 @@ public ResetMapConfig(id)
 	}
 	
 	ScanMapItems();
-	CC_SendMessage(id, "Todas as configurações foram resetadas.");
+	CC_SendMessage(id, "%L", id, "MSG_SETTINGS_RESET");
 	OpenMainMenu(id);
 }
 

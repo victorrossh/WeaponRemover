@@ -1,0 +1,51 @@
+[en]
+
+MENU_MAIN_TITLE = Weapon Remover
+MENU_MAP_WEAPONS = Map Weapons
+MENU_RESET_SETTINGS = Reset All Settings
+MENU_SELECT_ITEMS = Select Items:
+MENU_REMOVE_ALL = REMOVE ALL
+MENU_NO_ITEMS = No items found in map.
+STATUS_REMOVED = [REMOVED]
+STATUS_ON = [ON]
+MSG_GLOBAL_ACTIVE = Global removal active. Changing individual entity status is not allowed.
+MSG_SETTINGS_RESET = All settings have been reset.
+
+[ro]
+
+MENU_MAIN_TITLE = Eliminator de Arme  
+MENU_MAP_WEAPONS = Arme de pe Hartă  
+MENU_RESET_SETTINGS = Resetează Setările  
+MENU_SELECT_ITEMS = Selectează Obiecte:  
+MENU_REMOVE_ALL = ELIMINĂ TOATE  
+MENU_NO_ITEMS = Nicio armă găsită pe hartă.  
+STATUS_REMOVED = [ELIMINAT]  
+STATUS_ON = [ACTIV]  
+MSG_GLOBAL_ACTIVE = Eliminarea globală este activă. Modificarea stării entității unice nu este permisă.  
+MSG_SETTINGS_RESET = Toate setările au fost resetate.
+
+[bp]
+
+MENU_MAIN_TITLE = Removedor de Armas
+MENU_MAP_WEAPONS = Armas do Mapa
+MENU_RESET_SETTINGS = Redefinir Configurações
+MENU_SELECT_ITEMS = Selecionar Itens:
+MENU_REMOVE_ALL = REMOVER TODAS
+MENU_NO_ITEMS = Nenhuma arma encontrada no mapa.
+STATUS_REMOVED = [REMOVIDO]
+STATUS_ON = [ATIVO]
+MSG_GLOBAL_ACTIVE = Remoção global ativa. Alterar o status da entidade única não é permitido.
+MSG_SETTINGS_RESET = Todas as configurações foram resetadas.
+
+[pt]
+
+MENU_MAIN_TITLE = Removedor de Armas
+MENU_MAP_WEAPONS = Armas do Mapa
+MENU_RESET_SETTINGS = Redefinir Configurações
+MENU_SELECT_ITEMS = Selecionar Itens:
+MENU_REMOVE_ALL = REMOVER TODAS
+MENU_NO_ITEMS = Nenhuma arma encontrada no mapa.
+STATUS_REMOVED = [REMOVIDO]
+STATUS_ON = [ATIVO]
+MSG_GLOBAL_ACTIVE = Remoção global ativa. Alterar o status da entidade única não é permitido.
+MSG_SETTINGS_RESET = Todas as configurações foram resetadas.
