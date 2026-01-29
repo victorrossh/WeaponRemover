@@ -4,6 +4,11 @@
 
 ---
 
+## Credits
+- **ftl~** 
+
+---
+
 ## About
 
 This plugin was created for my Counter-Strike 1.6 surf server, where the rule is to allow only **M3**, **Desert Eagle**, and **HE Grenade**.  
@@ -68,8 +73,4 @@ The **Weapon Remover** plugin allows administrators to remove these items—both
 
 ## Contributions
 
-This plugin was developed for my surf server's specific needs.  
 For suggestions, improvements, or bug reports, please contact me or submit a pull request.
-
-**Author**: ftl~  
-**Version**: 1.0
