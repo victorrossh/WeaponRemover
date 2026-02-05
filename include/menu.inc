@@ -112,13 +112,9 @@ public ShowItemHandler(id, menu, item)
 			{
 				ArrayGetString(g_Models, i, model, charsmax(model));
 				if(TrieGetCell(g_TempStatus, model, tempStatus))
-				{
 					TrieSetCell(g_ModelStatus, model, tempStatus);
-				}
 				else
-				{
 					TrieSetCell(g_ModelStatus, model, false);
-				}
 			}
 		}
 		
